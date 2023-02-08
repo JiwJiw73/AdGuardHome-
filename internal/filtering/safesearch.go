@@ -7,10 +7,8 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net"
-	"net/http"
 	"time"
 
-	"github.com/AdguardTeam/AdGuardHome/internal/aghhttp"
 	"github.com/AdguardTeam/golibs/cache"
 	"github.com/AdguardTeam/golibs/log"
 )
@@ -132,26 +130,6 @@ func (d *DNSFilter) checkSafeSearch(
 	}
 
 	return Result{}, fmt.Errorf("no ipv4 addresses in safe search response for %s", safeHost)
-}
-
-func (d *DNSFilter) handleSafeSearchEnable(w http.ResponseWriter, r *http.Request) {
-	setProtectedBool(&d.confLock, &d.Config.SafeSearchEnabled, true)
-	d.Config.ConfigModified()
-}
-
-func (d *DNSFilter) handleSafeSearchDisable(w http.ResponseWriter, r *http.Request) {
-	setProtectedBool(&d.confLock, &d.Config.SafeSearchEnabled, false)
-	d.Config.ConfigModified()
-}
-
-func (d *DNSFilter) handleSafeSearchStatus(w http.ResponseWriter, r *http.Request) {
-	resp := &struct {
-		Enabled bool `json:"enabled"`
-	}{
-		Enabled: protectedBool(&d.confLock, &d.Config.SafeSearchEnabled),
-	}
-
-	_ = aghhttp.WriteJSONResponse(w, r, resp)
 }
 
 var safeSearchDomains = map[string]string{

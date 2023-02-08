@@ -82,7 +82,8 @@ type Config struct {
 	FilteringEnabled           bool   `yaml:"filtering_enabled"`       // whether or not use filter lists
 	FiltersUpdateIntervalHours uint32 `yaml:"filters_update_interval"` // time period to update filters (in hours)
 
-	ParentalEnabled     bool `yaml:"parental_enabled"`
+	ParentalEnabled bool `yaml:"parental_enabled"`
+	// TODO(d.kolyshev): !! Remove SafeSearchEnabled
 	SafeSearchEnabled   bool `yaml:"safesearch_enabled"`
 	SafeBrowsingEnabled bool `yaml:"safebrowsing_enabled"`
 
