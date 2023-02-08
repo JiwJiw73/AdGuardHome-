@@ -15,6 +15,7 @@ import (
 	"github.com/AdguardTeam/AdGuardHome/internal/aghhttp"
 	"github.com/AdguardTeam/golibs/errors"
 	"github.com/AdguardTeam/golibs/log"
+	"github.com/AdguardTeam/golibs/stringutil"
 	"go.etcd.io/bbolt"
 )
 
@@ -51,6 +52,9 @@ type Config struct {
 	// LimitDays is the maximum number of days to collect statistics into the
 	// current unit.
 	LimitDays uint32
+
+	// Ignored is the list of host names, which are should not be counted.
+	Ignored *stringutil.Set
 }
 
 // Interface is the statistics interface to be used by other packages.
@@ -102,6 +106,9 @@ type StatsCtx struct {
 
 	// filename is the name of database file.
 	filename string
+
+	// ignored is the list of host names, which are should not be counted.
+	ignored *stringutil.Set
 }
 
 // New creates s from conf and properly initializes it.  Don't use s before
@@ -114,6 +121,7 @@ func New(conf Config) (s *StatsCtx, err error) {
 		filename:       conf.Filename,
 		configModified: conf.ConfigModified,
 		httpRegister:   conf.HTTPRegister,
+		ignored:        conf.Ignored,
 	}
 	if s.limitHours = conf.LimitDays * 24; !checkInterval(conf.LimitDays) {
 		s.limitHours = 24

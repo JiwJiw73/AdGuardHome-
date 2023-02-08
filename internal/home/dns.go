@@ -51,17 +51,6 @@ func initDNS() (err error) {
 
 	anonymizer := config.anonymizer()
 
-	statsConf := stats.Config{
-		Filename:       filepath.Join(baseDir, "stats.db"),
-		LimitDays:      config.DNS.StatsInterval,
-		ConfigModified: onConfigModified,
-		HTTPRegister:   httpRegister,
-	}
-	Context.stats, err = stats.New(statsConf)
-	if err != nil {
-		return fmt.Errorf("init stats: %w", err)
-	}
-
 	conf := querylog.Config{
 		Anonymizer:        anonymizer,
 		ConfigModified:    onConfigModified,
@@ -84,6 +73,18 @@ func initDNS() (err error) {
 		conf.Ignored.Add(host)
 	}
 	Context.queryLog = querylog.New(conf)
+
+	statsConf := stats.Config{
+		Filename:       filepath.Join(baseDir, "stats.db"),
+		LimitDays:      config.DNS.StatsInterval,
+		ConfigModified: onConfigModified,
+		HTTPRegister:   httpRegister,
+		Ignored:        conf.Ignored,
+	}
+	Context.stats, err = stats.New(statsConf)
+	if err != nil {
+		return fmt.Errorf("init stats: %w", err)
+	}
 
 	Context.filters, err = filtering.New(config.DNS.DnsfilterConf, nil)
 	if err != nil {
