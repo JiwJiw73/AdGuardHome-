@@ -717,6 +717,7 @@
                     'sensitivity': 13
   '/safesearch/enable':
     'post':
+      'deprecated': true
       'tags':
       - 'safesearch'
       'operationId': 'safesearchEnable'
@@ -726,10 +727,25 @@
           'description': 'OK.'
   '/safesearch/disable':
     'post':
+      'deprecated': true
       'tags':
       - 'safesearch'
       'operationId': 'safesearchDisable'
       'summary': 'Disable safesearch'
+      'responses':
+        '200':
+          'description': 'OK.'
+  '/safesearch/settings':
+    'put':
+      'tags':
+      - 'safesearch'
+      'operationId': 'safesearchSettings'
+      'summary': 'Update safesearch settings'
+      'requestBody':
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/SafeSearchSettings'
       'responses':
         '200':
           'description': 'OK.'
@@ -745,14 +761,7 @@
           'content':
             'application/json':
               'schema':
-                'type': 'object'
-                'properties':
-                  'enabled':
-                    'type': 'boolean'
-              'examples':
-                'response':
-                  'value':
-                    'enabled': false
+                '$ref': '#/components/schemas/SafeSearchSettings'
   '/clients':
     'get':
       'tags':
@@ -2267,6 +2276,24 @@
         - 'name'
         - 'language'
         - 'theme'
+    'SafeSearchSettings':
+      'type': 'object'
+      'description': 'Safe search settings.'
+      'properties':
+        'enabled':
+          'type': 'boolean'
+        'bing':
+          'type': 'boolean'
+        'duckduckgo':
+          'type': 'boolean'
+        'google':
+          'type': 'boolean'
+        'pixabay':
+          'type': 'boolean'
+        'yandex':
+          'type': 'boolean'
+        'youtube':
+          'type': 'boolean'
     'Client':
       'type': 'object'
       'description': 'Client information.'

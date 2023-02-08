@@ -8,6 +8,35 @@
 
 ## v0.107.23: API changes
 
+### `POST /control/safesearch/enable` is deprecated
+
+Use `PUT /control/safesearch/settings`.
+
+### `POST /control/safesearch/disable` is deprecated
+
+Use `PUT /control/safesearch/settings`.
+
+### `GET /control/safesearch/status`
+
+* The `control/safesearch/status` HTTP API has been changed.
+
+### `PUT /control/safesearch/settings`
+
+* The new `PUT /control/safesearch/settings` HTTP API allows safesearch
+  settings updates. It accepts a JSON object with the following format:
+
+```json
+{
+  "enabled": true,
+  "bing": false,
+  "duckduckgo": true,
+  "google": false,
+  "pixabay": false,
+  "yandex": true,
+  "youtube": false
+}
+```
+
 ### Experimental “beta” APIs removed
 
 The following experimental beta APIs have been removed:
