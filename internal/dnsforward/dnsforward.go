@@ -253,7 +253,7 @@ func (s *Server) Resolve(host string) ([]net.IPAddr, error) {
 
 // RDNSExchanger is a resolver for clients' addresses.
 type RDNSExchanger interface {
-	// Exchange tries to resolve the ip in a suitable way, e.g. either as
+	// Exchange tries to resolve the ip in a suitable way, e.i. either as
 	// local or as external.
 	Exchange(ip net.IP) (host string, err error)
 

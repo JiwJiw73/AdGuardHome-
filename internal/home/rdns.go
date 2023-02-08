@@ -97,7 +97,9 @@ func (r *RDNS) isCached(ip netip.Addr) (ok bool) {
 func (r *RDNS) Begin(ip netip.Addr) {
 	r.ensurePrivateCache()
 
-	if r.isCached(ip) || r.clients.exists(ip, ClientSourceRDNS) {
+	if r.isCached(ip) {
+		return
+	} else if r.clients.exists(ip) > ClientSourceRDNS {
 		return
 	}
 
