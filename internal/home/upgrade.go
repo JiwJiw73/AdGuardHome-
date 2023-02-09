@@ -819,6 +819,9 @@ func upgradeSchema13to14(diskConf yobj) (err error) {
 //	  'interval': '2160h'
 //	  'size_memory': 1000
 //	  'ignored': []
+//
+// TODO(d.kolyshev): Migrate dns.safesearch_enabled to dns.safe_search.
+// TODO(d.kolyshev): Migrate clients' safesearch_enabled to dns.safe_search.
 func upgradeSchema14to15(diskConf yobj) (err error) {
 	log.Printf("Upgrade yaml: 14 to 15")
 	diskConf["schema_version"] = 15

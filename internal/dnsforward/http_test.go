@@ -18,6 +18,7 @@ import (
 	"github.com/AdguardTeam/AdGuardHome/internal/aghhttp"
 	"github.com/AdguardTeam/AdGuardHome/internal/aghnet"
 	"github.com/AdguardTeam/AdGuardHome/internal/filtering"
+	"github.com/AdguardTeam/AdGuardHome/internal/filtering/safesearch"
 	"github.com/AdguardTeam/golibs/netutil"
 	"github.com/AdguardTeam/golibs/testutil"
 	"github.com/miekg/dns"
@@ -57,7 +58,7 @@ func TestDNSForwardHTTP_handleGetConfig(t *testing.T) {
 	filterConf := &filtering.Config{
 		SafeBrowsingEnabled:   true,
 		SafeBrowsingCacheSize: 1000,
-		SafeSearchEnabled:     true,
+		SafeSearch:            safesearch.Settings{Enabled: true},
 		SafeSearchCacheSize:   1000,
 		ParentalCacheSize:     1000,
 		CacheTime:             30,
@@ -132,7 +133,7 @@ func TestDNSForwardHTTP_handleSetConfig(t *testing.T) {
 	filterConf := &filtering.Config{
 		SafeBrowsingEnabled:   true,
 		SafeBrowsingCacheSize: 1000,
-		SafeSearchEnabled:     true,
+		SafeSearch:            safesearch.Settings{Enabled: true},
 		SafeSearchCacheSize:   1000,
 		ParentalCacheSize:     1000,
 		CacheTime:             30,

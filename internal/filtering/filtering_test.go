@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/AdguardTeam/AdGuardHome/internal/aghtest"
+	"github.com/AdguardTeam/AdGuardHome/internal/filtering/safesearch"
 	"github.com/AdguardTeam/golibs/cache"
 	"github.com/AdguardTeam/golibs/log"
 	"github.com/AdguardTeam/golibs/testutil"
@@ -51,7 +52,7 @@ func newForTest(t testing.TB, c *Config, filters []Filter) (f *DNSFilter, setts 
 		c.ParentalCacheSize = 10000
 		c.SafeSearchCacheSize = 1000
 		c.CacheTime = 30
-		setts.SafeSearchEnabled = c.SafeSearchEnabled
+		setts.SafeSearchEnabled = c.SafeSearch.Enabled
 		setts.SafeBrowsingEnabled = c.SafeBrowsingEnabled
 		setts.ParentalEnabled = c.ParentalEnabled
 	} else {
@@ -219,7 +220,7 @@ func TestParallelSB(t *testing.T) {
 // Safe Search.
 
 func TestSafeSearch(t *testing.T) {
-	d, _ := newForTest(t, &Config{SafeSearchEnabled: true}, nil)
+	d, _ := newForTest(t, &Config{SafeSearch: defaultSafeSearchSettings}, nil)
 	t.Cleanup(d.Close)
 	val, ok := d.SafeSearchDomain("www.google.com")
 	require.True(t, ok)
@@ -229,7 +230,7 @@ func TestSafeSearch(t *testing.T) {
 
 func TestCheckHostSafeSearchYandex(t *testing.T) {
 	d, setts := newForTest(t, &Config{
-		SafeSearchEnabled: true,
+		SafeSearch: safesearch.Settings{Enabled: true, Yandex: true},
 	}, nil)
 	t.Cleanup(d.Close)
 
@@ -261,8 +262,8 @@ func TestCheckHostSafeSearchYandex(t *testing.T) {
 func TestCheckHostSafeSearchGoogle(t *testing.T) {
 	resolver := &aghtest.TestResolver{}
 	d, setts := newForTest(t, &Config{
-		SafeSearchEnabled: true,
-		CustomResolver:    resolver,
+		SafeSearch:     safesearch.Settings{Enabled: true, Google: true},
+		CustomResolver: resolver,
 	}, nil)
 	t.Cleanup(d.Close)
 
@@ -307,7 +308,9 @@ func TestSafeSearchCacheYandex(t *testing.T) {
 
 	yandexIP := net.IPv4(213, 180, 193, 56)
 
-	d, setts = newForTest(t, &Config{SafeSearchEnabled: true}, nil)
+	d, setts = newForTest(t, &Config{
+		SafeSearch: safesearch.Settings{Enabled: true, Yandex: true},
+	}, nil)
 	t.Cleanup(d.Close)
 
 	res, err = d.CheckHost(domain, dns.TypeA, setts)
@@ -340,7 +343,9 @@ func TestSafeSearchCacheGoogle(t *testing.T) {
 
 	require.Empty(t, res.Rules)
 
-	d, setts = newForTest(t, &Config{SafeSearchEnabled: true}, nil)
+	d, setts = newForTest(t, &Config{
+		SafeSearch: safesearch.Settings{Enabled: true, Google: true},
+	}, nil)
 	t.Cleanup(d.Close)
 	d.resolver = resolver
 
@@ -855,8 +860,18 @@ func BenchmarkSafeBrowsingParallel(b *testing.B) {
 	})
 }
 
+var defaultSafeSearchSettings = safesearch.Settings{
+	Enabled:    true,
+	Bing:       true,
+	DuckDuckGo: true,
+	Google:     true,
+	Pixabay:    true,
+	Yandex:     true,
+	Youtube:    true,
+}
+
 func BenchmarkSafeSearch(b *testing.B) {
-	d, _ := newForTest(b, &Config{SafeSearchEnabled: true}, nil)
+	d, _ := newForTest(b, &Config{SafeSearch: defaultSafeSearchSettings}, nil)
 	b.Cleanup(d.Close)
 	for n := 0; n < b.N; n++ {
 		val, ok := d.SafeSearchDomain("www.google.com")
@@ -867,7 +882,7 @@ func BenchmarkSafeSearch(b *testing.B) {
 }
 
 func BenchmarkSafeSearchParallel(b *testing.B) {
-	d, _ := newForTest(b, &Config{SafeSearchEnabled: true}, nil)
+	d, _ := newForTest(b, &Config{SafeSearch: defaultSafeSearchSettings}, nil)
 	b.Cleanup(d.Close)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

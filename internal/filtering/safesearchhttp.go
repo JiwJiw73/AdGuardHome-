@@ -1,9 +1,11 @@
 package filtering
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/AdguardTeam/AdGuardHome/internal/aghhttp"
+	"github.com/AdguardTeam/AdGuardHome/internal/filtering/safesearch"
 )
 
 // handleSafeSearchEnable is the handler for POST /control/safesearch/enable
@@ -11,10 +13,8 @@ import (
 //
 // Deprecated: Use handleSafeSearchSettings.
 func (d *DNSFilter) handleSafeSearchEnable(w http.ResponseWriter, r *http.Request) {
-	setProtectedBool(&d.confLock, &d.Config.SafeSearchEnabled, true)
+	setProtectedBool(&d.confLock, &d.Config.SafeSearch.Enabled, true)
 	d.Config.ConfigModified()
-
-	// TODO(d.kolyshev): !! Update SafeSearch.Enabled
 }
 
 // handleSafeSearchDisable is the handler for POST /control/safesearch/disable
@@ -22,22 +22,16 @@ func (d *DNSFilter) handleSafeSearchEnable(w http.ResponseWriter, r *http.Reques
 //
 // Deprecated: Use handleSafeSearchSettings.
 func (d *DNSFilter) handleSafeSearchDisable(w http.ResponseWriter, r *http.Request) {
-	setProtectedBool(&d.confLock, &d.Config.SafeSearchEnabled, false)
+	setProtectedBool(&d.confLock, &d.Config.SafeSearch.Enabled, false)
 	d.Config.ConfigModified()
-
-	// TODO(d.kolyshev): !! Update SafeSearch.Enabled
 }
 
 // handleSafeSearchStatus is the handler for GET /control/safesearch/status
 // HTTP API.
-//
-// TODO(d.kolyshev): !! Add new fields
 func (d *DNSFilter) handleSafeSearchStatus(w http.ResponseWriter, r *http.Request) {
-	resp := &struct {
-		Enabled bool `json:"enabled"`
-	}{
-		Enabled: protectedBool(&d.confLock, &d.Config.SafeSearchEnabled),
-	}
+	d.confLock.RLock()
+	resp := d.Config.SafeSearch
+	d.confLock.RUnlock()
 
 	_ = aghhttp.WriteJSONResponse(w, r, resp)
 }
@@ -45,7 +39,19 @@ func (d *DNSFilter) handleSafeSearchStatus(w http.ResponseWriter, r *http.Reques
 // handleSafeSearchSettings is the handler for PUT /control/safesearch/settings
 // HTTP API.
 func (d *DNSFilter) handleSafeSearchSettings(w http.ResponseWriter, r *http.Request) {
-	// TODO(d.kolyshev): !! Implement handleSafeSearchSettings
+	req := &safesearch.Settings{}
+	err := json.NewDecoder(r.Body).Decode(req)
+	if err != nil {
+		aghhttp.Error(r, w, http.StatusBadRequest, "reading req: %s", err)
 
-	aghhttp.Error(r, w, http.StatusBadRequest, "not implemented")
+		return
+	}
+
+	d.confLock.Lock()
+	d.Config.SafeSearch = *req
+	d.confLock.Unlock()
+
+	d.Config.ConfigModified()
+
+	aghhttp.OK(w)
 }

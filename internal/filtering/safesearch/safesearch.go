@@ -10,6 +10,22 @@ import (
 	"github.com/AdguardTeam/urlfilter/rules"
 )
 
+// Settings is a struct with safe search related settings.
+type Settings struct {
+	// Enabled indicates if safe search is enabled entirely.
+	Enabled bool `yaml:"enabled" json:"enabled"`
+
+	// Services flags.  Each flag indicates if the corresponding service is
+	// enabled or disabled.
+
+	Bing       bool `yaml:"bing" json:"bing"`
+	DuckDuckGo bool `yaml:"duckduckgo" json:"duckduckgo"`
+	Google     bool `yaml:"google" json:"google"`
+	Pixabay    bool `yaml:"pixabay" json:"pixabay"`
+	Yandex     bool `yaml:"yandex" json:"yandex"`
+	Youtube    bool `yaml:"youtube" json:"youtube"`
+}
+
 // Matcher interface.
 type Matcher interface {
 	// MatchRequest returns matching safesearch rewrites rules for request.

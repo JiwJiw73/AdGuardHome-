@@ -22,6 +22,7 @@ import (
 	"github.com/AdguardTeam/AdGuardHome/internal/aghtest"
 	"github.com/AdguardTeam/AdGuardHome/internal/dhcpd"
 	"github.com/AdguardTeam/AdGuardHome/internal/filtering"
+	"github.com/AdguardTeam/AdGuardHome/internal/filtering/safesearch"
 	"github.com/AdguardTeam/dnsproxy/proxy"
 	"github.com/AdguardTeam/dnsproxy/upstream"
 	"github.com/AdguardTeam/golibs/netutil"
@@ -398,7 +399,7 @@ func TestServerRace(t *testing.T) {
 	filterConf := &filtering.Config{
 		SafeBrowsingEnabled:   true,
 		SafeBrowsingCacheSize: 1000,
-		SafeSearchEnabled:     true,
+		SafeSearch:            safesearch.Settings{Enabled: true},
 		SafeSearchCacheSize:   1000,
 		ParentalCacheSize:     1000,
 		CacheTime:             30,
@@ -427,7 +428,7 @@ func TestServerRace(t *testing.T) {
 func TestSafeSearch(t *testing.T) {
 	resolver := &aghtest.TestResolver{}
 	filterConf := &filtering.Config{
-		SafeSearchEnabled:   true,
+		SafeSearch:          safesearch.Settings{Enabled: true},
 		SafeSearchCacheSize: 1000,
 		CacheTime:           30,
 		CustomResolver:      resolver,

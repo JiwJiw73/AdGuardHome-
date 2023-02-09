@@ -18,6 +18,7 @@ import (
 
 	"github.com/AdguardTeam/AdGuardHome/internal/aghhttp"
 	"github.com/AdguardTeam/AdGuardHome/internal/aghnet"
+	"github.com/AdguardTeam/AdGuardHome/internal/filtering/safesearch"
 	"github.com/AdguardTeam/dnsproxy/upstream"
 	"github.com/AdguardTeam/golibs/cache"
 	"github.com/AdguardTeam/golibs/errors"
@@ -83,8 +84,10 @@ type Config struct {
 	FiltersUpdateIntervalHours uint32 `yaml:"filters_update_interval"` // time period to update filters (in hours)
 
 	ParentalEnabled bool `yaml:"parental_enabled"`
-	// TODO(d.kolyshev): !! Remove SafeSearchEnabled
-	SafeSearchEnabled   bool `yaml:"safesearch_enabled"`
+
+	// SafeSearch settings.
+	SafeSearch safesearch.Settings `yaml:"safe_search"`
+
 	SafeBrowsingEnabled bool `yaml:"safebrowsing_enabled"`
 
 	SafeBrowsingCacheSize uint `yaml:"safebrowsing_cache_size"` // (in bytes)
@@ -299,7 +302,7 @@ func (d *DNSFilter) GetConfig() (s Settings) {
 
 	return Settings{
 		FilteringEnabled:    atomic.LoadUint32(&d.Config.enabled) != 0,
-		SafeSearchEnabled:   d.Config.SafeSearchEnabled,
+		SafeSearchEnabled:   d.Config.SafeSearch.Enabled,
 		SafeBrowsingEnabled: d.Config.SafeBrowsingEnabled,
 		ParentalEnabled:     d.Config.ParentalEnabled,
 	}
