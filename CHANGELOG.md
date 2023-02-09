@@ -25,6 +25,8 @@ NOTE: Add new changes BELOW THIS COMMENT.
 
 ### Added
 
+- The ability to manage safesearch for each service by using the new
+  `safe_search` field ([#1163]).
 - The ability to exclude domain names from the query log by using the new
   `querylog.ignored` field ([#1717], [#4299]).
 
@@ -56,6 +58,26 @@ In this release, the schema version has changed from 14 to 15.
   object, remove `querylog` object and `querylog.ignored` property, and change
   the `schema_version` back to `14`.
 
+- The `dns.safesearch_enabled` field has been replaced with `safe_search`
+  object containing per-service settings.
+
+  ```yaml
+    # BEFORE:
+    'dns':
+      'safesearch_enabled': true
+  
+    # AFTER:
+    'dns':
+      'safe_search':
+        'enabled': true
+        'bing': true
+        'duckduckgo': true
+        'google': true
+        'pixabay': true
+        'yandex': true
+        'youtube': true
+    ```
+
 ### Deprecated
 
 - Go 1.19 support.  Future versions will require at least Go 1.20 to build.
@@ -68,6 +90,7 @@ In this release, the schema version has changed from 14 to 15.
 
 - Go 1.18 support, as it has reached end of life.
 
+[#1163]: https://github.com/AdguardTeam/AdGuardHome/issues/1163
 [#1717]: https://github.com/AdguardTeam/AdGuardHome/issues/1717
 [#4299]: https://github.com/AdguardTeam/AdGuardHome/issues/4299
 [#5433]: https://github.com/AdguardTeam/AdGuardHome/issues/5433
