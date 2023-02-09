@@ -51,6 +51,27 @@ func initDNS() (err error) {
 
 	anonymizer := config.anonymizer()
 
+	statsConf := stats.Config{
+		Filename:       filepath.Join(baseDir, "stats.db"),
+		LimitDays:      config.Stats.Interval,
+		ConfigModified: onConfigModified,
+		HTTPRegister:   httpRegister,
+		Enabled:        config.Stats.Enabled,
+		Ignored:        stringutil.NewSet(),
+	}
+	for _, v := range config.Stats.Ignored {
+		host := strings.ToLower(strings.TrimSuffix(v, "."))
+		if statsConf.Ignored.Has(host) {
+			return fmt.Errorf("statistics: duplicate ignored host %s", host)
+		}
+
+		statsConf.Ignored.Add(host)
+	}
+	Context.stats, err = stats.New(statsConf)
+	if err != nil {
+		return fmt.Errorf("init stats: %w", err)
+	}
+
 	conf := querylog.Config{
 		Anonymizer:        anonymizer,
 		ConfigModified:    onConfigModified,
@@ -67,24 +88,12 @@ func initDNS() (err error) {
 	for _, v := range config.QueryLog.Ignored {
 		host := strings.ToLower(strings.TrimSuffix(v, "."))
 		if conf.Ignored.Has(host) {
-			return fmt.Errorf("duplicate ignored host %s", host)
+			return fmt.Errorf("querylog: duplicate ignored host %s", host)
 		}
 
 		conf.Ignored.Add(host)
 	}
 	Context.queryLog = querylog.New(conf)
-
-	statsConf := stats.Config{
-		Filename:       filepath.Join(baseDir, "stats.db"),
-		LimitDays:      config.DNS.StatsInterval,
-		ConfigModified: onConfigModified,
-		HTTPRegister:   httpRegister,
-		Ignored:        conf.Ignored,
-	}
-	Context.stats, err = stats.New(statsConf)
-	if err != nil {
-		return fmt.Errorf("init stats: %w", err)
-	}
 
 	Context.filters, err = filtering.New(config.DNS.DnsfilterConf, nil)
 	if err != nil {

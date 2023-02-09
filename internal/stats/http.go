@@ -66,6 +66,9 @@ type configResp struct {
 // handleStatsInfo handles requests to the GET /control/stats_info endpoint.
 func (s *StatsCtx) handleStatsInfo(w http.ResponseWriter, r *http.Request) {
 	resp := configResp{IntervalDays: atomic.LoadUint32(&s.limitHours) / 24}
+	if !s.enabled {
+		resp.IntervalDays = 0
+	}
 	_ = aghhttp.WriteJSONResponse(w, r, resp)
 }
 

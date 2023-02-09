@@ -25,14 +25,16 @@ NOTE: Add new changes BELOW THIS COMMENT.
 
 ### Added
 
-- The ability to exclude domain names from the query log by using the new
-  `querylog.ignored` field ([#1717], [#4299]).
+- The ability to exclude domain names from the query log or statistics by using
+  the new `querylog.ignored` or `statistics.ignored` fields ([#1717], [#4299]).
+
+- The ability to disable statistics by using the new `statistics.enable` field.
 
 ### Changed
 
 #### Configuration Changes
 
-In this release, the schema version has changed from 14 to 15.
+In this release, the schema version has changed from 14 to 16.
 
 - The fields `dns.…` have been moved to the new `querylog` object.
 
@@ -55,6 +57,23 @@ In this release, the schema version has changed from 14 to 15.
   To rollback this change, rename and move properties back into the `dns`
   object, remove `querylog` object and `querylog.ignored` property, and change
   the `schema_version` back to `14`.
+- Property `statistics_interval`, which in schema versions 15 and earlier used
+  to be a part of the `dns` object, is now a part of the `statistics` object:
+
+  ```yaml
+  # BEFORE:
+  'dns':
+    # …
+    'statistics_interval': 1
+
+  # AFTER:
+  'statistics':
+    # …
+    'interval': 1
+  ```
+
+  To rollback this change, move the property back into the `dns` object and
+  change the `schema_version` back to `15`.
 
 ### Deprecated
 

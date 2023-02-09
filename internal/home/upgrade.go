@@ -22,7 +22,7 @@ import (
 )
 
 // currentSchemaVersion is the current schema version.
-const currentSchemaVersion = 15
+const currentSchemaVersion = 16
 
 // These aliases are provided for convenience.
 type (
@@ -88,6 +88,7 @@ func upgradeConfigSchema(oldVersion int, diskConf yobj) (err error) {
 		upgradeSchema12to13,
 		upgradeSchema13to14,
 		upgradeSchema14to15,
+		upgradeSchema15to16,
 	}
 
 	n := 0
@@ -852,6 +853,45 @@ func upgradeSchema14to15(diskConf yobj) (err error) {
 		qlog[r.to] = v
 	}
 	diskConf["querylog"] = qlog
+
+	return nil
+}
+
+// upgradeSchema15to16 performs the following changes:
+//
+//	# BEFORE:
+//	'dns':
+//	  'statistics_interval': 1
+//
+//	# AFTER:
+//	'statistics':
+//	  'enabled': true
+//	  'interval': 1
+//	  'ignored': []
+func upgradeSchema15to16(diskConf yobj) (err error) {
+	log.Printf("Upgrade yaml: 15 to 16")
+	diskConf["schema_version"] = 16
+
+	dnsVal := diskConf["dns"]
+	dns, ok := dnsVal.(map[string]any)
+	if !ok {
+		return fmt.Errorf("unexpected type of dns: %T", dnsVal)
+	}
+
+	stats := map[string]any{
+		"enabled":  true,
+		"interval": 1,
+		"ignored":  []any{},
+	}
+
+	k := "statistics_interval"
+	v, has := dns[k]
+	if has {
+		stats["interval"] = v
+	}
+	delete(dns, k)
+
+	diskConf["statistics"] = stats
 
 	return nil
 }

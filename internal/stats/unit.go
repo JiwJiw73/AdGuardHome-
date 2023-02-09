@@ -414,7 +414,7 @@ func (s *StatsCtx) getData(limit uint32) (StatsResp, bool) {
 		ReplacedParental:     statsCollector(units, firstID, timeUnit, func(u *unitDB) (num uint64) { return u.NResult[RParental] }),
 		TopQueried:           topsCollector(units, maxDomains, s.ignored, func(u *unitDB) (pairs []countPair) { return u.Domains }),
 		TopBlocked:           topsCollector(units, maxDomains, s.ignored, func(u *unitDB) (pairs []countPair) { return u.BlockedDomains }),
-		TopClients:           topsCollector(units, maxClients, stringutil.NewSet(), func(u *unitDB) (pairs []countPair) { return u.Clients }),
+		TopClients:           topsCollector(units, maxClients, nil, func(u *unitDB) (pairs []countPair) { return u.Clients }),
 	}
 
 	// Total counters:

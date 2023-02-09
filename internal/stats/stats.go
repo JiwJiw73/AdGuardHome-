@@ -19,13 +19,6 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-// DiskConfig is the configuration structure that is stored in file.
-type DiskConfig struct {
-	// Interval is the number of days for which the statistics are collected
-	// before flushing to the database.
-	Interval uint32 `yaml:"statistics_interval"`
-}
-
 // checkInterval returns true if days is valid to be used as statistics
 // retention interval.  The valid values are 0, 1, 7, 30 and 90.
 func checkInterval(days uint32) (ok bool) {
@@ -53,7 +46,10 @@ type Config struct {
 	// current unit.
 	LimitDays uint32
 
-	// Ignored is the list of host names, which are should not be counted.
+	// Enabled tells if the statistics are enabled.
+	Enabled bool
+
+	// Ignored is the list of host names, which should not be counted.
 	Ignored *stringutil.Set
 }
 
@@ -72,7 +68,10 @@ type Interface interface {
 	TopClientsIP(limit uint) []netip.Addr
 
 	// WriteDiskConfig puts the Interface's configuration to the dc.
-	WriteDiskConfig(dc *DiskConfig)
+	WriteDiskConfig(dc *Config)
+
+	// ShouldCount returns true if request for the host should be counted.
+	ShouldCount(host string, qType, qClass uint16) bool
 }
 
 // StatsCtx collects the statistics and flushes it to the database.  Its default
@@ -107,7 +106,10 @@ type StatsCtx struct {
 	// filename is the name of database file.
 	filename string
 
-	// ignored is the list of host names, which are should not be counted.
+	// enabled tells if the statistics are enabled.
+	enabled bool
+
+	// ignored is the list of host names, which should not be counted.
 	ignored *stringutil.Set
 }
 
@@ -117,6 +119,7 @@ func New(conf Config) (s *StatsCtx, err error) {
 	defer withRecovered(&err)
 
 	s = &StatsCtx{
+		enabled:        conf.Enabled,
 		currMu:         &sync.RWMutex{},
 		filename:       conf.Filename,
 		configModified: conf.ConfigModified,
@@ -223,7 +226,7 @@ func (s *StatsCtx) Close() (err error) {
 
 // Update implements the Interface interface for *StatsCtx.
 func (s *StatsCtx) Update(e Entry) {
-	if atomic.LoadUint32(&s.limitHours) == 0 {
+	if !s.enabled || atomic.LoadUint32(&s.limitHours) == 0 {
 		return
 	}
 
@@ -251,14 +254,16 @@ func (s *StatsCtx) Update(e Entry) {
 }
 
 // WriteDiskConfig implements the Interface interface for *StatsCtx.
-func (s *StatsCtx) WriteDiskConfig(dc *DiskConfig) {
-	dc.Interval = atomic.LoadUint32(&s.limitHours) / 24
+func (s *StatsCtx) WriteDiskConfig(dc *Config) {
+	dc.LimitDays = atomic.LoadUint32(&s.limitHours) / 24
+	dc.Enabled = s.enabled
+	dc.Ignored = s.ignored
 }
 
 // TopClientsIP implements the [Interface] interface for *StatsCtx.
 func (s *StatsCtx) TopClientsIP(maxCount uint) (ips []netip.Addr) {
 	limit := atomic.LoadUint32(&s.limitHours)
-	if limit == 0 {
+	if !s.enabled || limit == 0 {
 		return nil
 	}
 
@@ -418,14 +423,19 @@ func (s *StatsCtx) periodicFlush() {
 }
 
 func (s *StatsCtx) setLimit(limitDays int) {
-	atomic.StoreUint32(&s.limitHours, uint32(24*limitDays))
-	if limitDays == 0 {
-		if err := s.clear(); err != nil {
-			log.Error("stats: %s", err)
-		}
+	if limitDays != 0 {
+		s.enabled = true
+		atomic.StoreUint32(&s.limitHours, uint32(24*limitDays))
+		log.Debug("stats: set limit: %d days", limitDays)
+		return
 	}
 
-	log.Debug("stats: set limit: %d days", limitDays)
+	s.enabled = false
+	log.Debug("stats: disabled")
+
+	if err := s.clear(); err != nil {
+		log.Error("stats: %s", err)
+	}
 }
 
 // Reset counters and clear database
@@ -527,4 +537,14 @@ func (s *StatsCtx) loadUnits(limit uint32) (units []*unitDB, firstID uint32) {
 	}
 
 	return units, firstID
+}
+
+// ShouldCount returns true if request for the host should be counted.
+func (s *StatsCtx) ShouldCount(host string, _, _ uint16) bool {
+	return !s.isIgnored(host)
+}
+
+// isIgnored returns true if the host is in the Ignored list.
+func (s *StatsCtx) isIgnored(host string) bool {
+	return s.ignored.Has(host)
 }

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
+	"sync/atomic"
 
 	"github.com/AdguardTeam/AdGuardHome/internal/aghalg"
 	"github.com/AdguardTeam/AdGuardHome/internal/aghtls"
@@ -116,6 +117,7 @@ type configuration struct {
 	DNS      dnsConfig         `yaml:"dns"`
 	TLS      tlsConfigSettings `yaml:"tls"`
 	QueryLog queryLogConfig    `yaml:"querylog"`
+	Stats    statsConfig       `yaml:"statistics"`
 
 	// Filters reflects the filters from [filtering.Config].  It's cloned to the
 	// config used in the filtering module at the startup.  Afterwards it's
@@ -148,10 +150,6 @@ type configuration struct {
 type dnsConfig struct {
 	BindHosts []netip.Addr `yaml:"bind_hosts"`
 	Port      int          `yaml:"port"`
-
-	// StatsInterval is the time interval for flushing statistics to the disk in
-	// days.
-	StatsInterval uint32 `yaml:"statistics_interval"`
 
 	// AnonymizeClientIP defines if clients' IP addresses should be anonymized
 	// in query log and statistics.
@@ -234,8 +232,20 @@ type queryLogConfig struct {
 	// flushed to disk.
 	MemSize uint32 `yaml:"size_memory"`
 
-	// Ignored is the list of host names, which are should not be written
-	// to log.
+	// Ignored is the list of host names, which should not be written to
+	// log.
+	Ignored []string `yaml:"ignored"`
+}
+
+type statsConfig struct {
+	// Enabled defines if the statistics are enabled.
+	Enabled bool `yaml:"enabled"`
+
+	// Interval is the time interval for flushing statistics to the disk in
+	// days.
+	Interval uint32 `yaml:"interval"`
+
+	// Ignored is the list of host names, which should not be counted.
 	Ignored []string `yaml:"ignored"`
 }
 
@@ -249,9 +259,8 @@ var config = &configuration{
 	AuthBlockMin:       15,
 	WebSessionTTLHours: 30 * 24,
 	DNS: dnsConfig{
-		BindHosts:     []netip.Addr{netip.IPv4Unspecified()},
-		Port:          defaultPortDNS,
-		StatsInterval: 1,
+		BindHosts: []netip.Addr{netip.IPv4Unspecified()},
+		Port:      defaultPortDNS,
 		FilteringConfig: dnsforward.FilteringConfig{
 			ProtectionEnabled:  true, // whether or not use any of filtering features
 			BlockingMode:       dnsforward.BlockingModeDefault,
@@ -295,6 +304,11 @@ var config = &configuration{
 		Interval:    timeutil.Duration{Duration: 90 * timeutil.Day},
 		MemSize:     1000,
 		Ignored:     []string{},
+	},
+	Stats: statsConfig{
+		Enabled:  true,
+		Interval: 1,
+		Ignored:  []string{},
 	},
 	// NOTE: Keep these parameters in sync with the one put into
 	// client/src/helpers/filters/filters.js by scripts/vetted-filters.
@@ -472,9 +486,12 @@ func (c *configuration) write() (err error) {
 	}
 
 	if Context.stats != nil {
-		sdc := stats.DiskConfig{}
+		sdc := stats.Config{}
 		Context.stats.WriteDiskConfig(&sdc)
-		config.DNS.StatsInterval = sdc.Interval
+		config.Stats.Interval = atomic.LoadUint32(&sdc.LimitDays)
+		config.Stats.Enabled = sdc.Enabled
+		config.Stats.Ignored = sdc.Ignored.Values()
+		sort.Strings(config.Stats.Ignored)
 	}
 
 	if Context.queryLog != nil {

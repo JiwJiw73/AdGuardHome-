@@ -20,18 +20,14 @@ func (s *Server) processQueryLogsAndStats(dctx *dnsContext) (rc resultCode) {
 	elapsed := time.Since(dctx.startTime)
 	pctx := dctx.proxyCtx
 
-	countAny := true
 	shouldLog := true
 	msg := pctx.Req
 	q := msg.Question[0]
 	host := strings.ToLower(strings.TrimSuffix(q.Name, "."))
-	if s.queryLog != nil {
-		shouldLog = s.queryLog.ShouldLog(host, q.Qtype, q.Qclass)
-	}
 
 	// don't log ANY request if refuseAny is enabled
 	if q.Qtype == dns.TypeANY && s.conf.RefuseAny {
-		countAny = false
+		shouldLog = false
 	}
 
 	ip, _ := netutil.IPAndPortFromAddr(pctx.Addr)
@@ -47,7 +43,9 @@ func (s *Server) processQueryLogsAndStats(dctx *dnsContext) (rc resultCode) {
 	// Synchronize access to s.queryLog and s.stats so they won't be suddenly
 	// uninitialized while in use.  This can happen after proxy server has been
 	// stopped, but its workers haven't yet exited.
-	if countAny && s.queryLog != nil && shouldLog {
+	if shouldLog &&
+		s.queryLog != nil &&
+		s.queryLog.ShouldLog(host, q.Qtype, q.Qclass) {
 		s.logQuery(dctx, pctx, elapsed, ip)
 	} else {
 		log.Debug(
@@ -58,7 +56,7 @@ func (s *Server) processQueryLogsAndStats(dctx *dnsContext) (rc resultCode) {
 		)
 	}
 
-	if s.stats != nil && shouldLog {
+	if s.stats != nil && s.stats.ShouldCount(host, q.Qtype, q.Qclass) {
 		s.updateStats(dctx, elapsed, *dctx.result, ip)
 	}
 
