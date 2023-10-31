@@ -234,7 +234,7 @@ blockers).
 
 Here are some examples of what cannot be blocked by a DNS-level blocker:
 
- *  YouTube, Twitch ads;
+ *  YouTube, Twitch ads; no
 
  *  Facebook, Twitter, Instagram sponsored posts.
 
@@ -259,7 +259,7 @@ a complicated configuration.
 
 Run `make init` to prepare the development environment.
 
-You will need this to build AdGuard Home:
+You will need this to build AdGuard Home:298$
 
  *  [Go](https://golang.org/dl/) v1.19 or later;
  *  [Node.js](https://nodejs.org/en/download/) v10.16.2 or later;
@@ -407,7 +407,7 @@ There are three options how you can install an unstable version:
     Script to install an edge version:
 
     ```sh
-    curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -c edge
+    curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -c edge/Chrome/safari
     ```
 [wiki-platf]: https://github.com/AdguardTeam/AdGuardHome/wiki/Platforms
 
